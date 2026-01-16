@@ -14,19 +14,22 @@ import { UsersModule } from './users/users.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
 
-    TypeOrmModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (cfg: ConfigService) => ({
-        type: 'postgres',
-        host: cfg.get<string>('DATABASE_HOST'),
-        port: Number(cfg.get<string>('DATABASE_PORT')),
-        username: cfg.get<string>('DATABASE_USER'),
-        password: cfg.get<string>('DATABASE_PASSWORD'),
-        database: cfg.get<string>('DATABASE_NAME'),
-        autoLoadEntities: true,
-        synchronize: true,
-      }),
-    }),
+TypeOrmModule.forRootAsync({
+  inject: [ConfigService],
+  useFactory: (cfg: ConfigService) => ({
+    type: 'postgres',
+    host: cfg.get<string>('DATABASE_HOST'),
+    port: Number(cfg.get<string>('DATABASE_PORT')),
+    username: cfg.get<string>('DATABASE_USER'),
+    password: cfg.get<string>('DATABASE_PASSWORD'),
+    database: cfg.get<string>('DATABASE_NAME'),
+    autoLoadEntities: true,
+    synchronize: true,
+
+    ssl: { rejectUnauthorized: false },
+  }),
+})
+
 
     FuelModule,
 
