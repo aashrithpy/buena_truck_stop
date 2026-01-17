@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 
-
 type FuelRow = {
   id: number;
   type: "diesel" | "gas" | "premium" | "off_road_diesel" | "propane";
@@ -39,6 +38,16 @@ function titleCaseFuel(type: FuelRow["type"]) {
   }
 }
 
+/**
+ * Mobile-safe gutters so text/cards never touch the screen edge.
+ * - Uses CSS env() for iPhone safe-area (notch/rounded corners)
+ * - Inline styles apply everywhere without editing globals.css
+ */
+const containerGutter: React.CSSProperties = {
+  paddingLeft: "calc(16px + env(safe-area-inset-left))",
+  paddingRight: "calc(16px + env(safe-area-inset-right))",
+};
+
 export default function HomeClient() {
   const [fuel, setFuel] = useState<FuelRow[]>([]);
   const [services, setServices] = useState<ServiceRow[]>([]);
@@ -64,9 +73,18 @@ export default function HomeClient() {
     load();
   }, []);
 
-  const pricedFuel = useMemo(() => fuel.filter((f) => f.price !== null && f.available), [fuel]);
-  const otherFuel = useMemo(() => fuel.filter((f) => f.price === null && f.available), [fuel]);
-  const enabledServices = useMemo(() => services.filter((s) => s.enabled), [services]);
+  const pricedFuel = useMemo(
+    () => fuel.filter((f) => f.price !== null && f.available),
+    [fuel]
+  );
+  const otherFuel = useMemo(
+    () => fuel.filter((f) => f.price === null && f.available),
+    [fuel]
+  );
+  const enabledServices = useMemo(
+    () => services.filter((s) => s.enabled),
+    [services]
+  );
 
   return (
     <>
@@ -75,7 +93,14 @@ export default function HomeClient() {
       {/* HERO */}
       <section style={{ position: "relative" }}>
         <div style={{ position: "relative", height: "70vh", minHeight: 480 }}>
-          <Image src="/photos/main.png" alt="Buena Truck Stop" fill priority style={{ objectFit: "cover" }} />
+          <Image
+            src="/photos/main.png"
+            alt="Buena Truck Stop"
+            fill
+            priority
+            style={{ objectFit: "cover" }}
+          />
+
           <div
             style={{
               position: "absolute",
@@ -85,8 +110,15 @@ export default function HomeClient() {
             }}
           />
 
-          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "flex-end" }}>
-            <div className="container" style={{ paddingBottom: 36 }}>
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              alignItems: "flex-end",
+            }}
+          >
+            <div className="container" style={{ ...containerGutter, paddingBottom: 36 }}>
               <h1 className="h1" style={{ color: "white" }}>
                 Buena Truck Stop
               </h1>
@@ -101,9 +133,15 @@ export default function HomeClient() {
               </div>
 
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 18 }}>
-                <a className="btnPrimary" href="#fuel">View Fuel Prices</a>
-                <a className="btnSecondary" href="#services">Services</a>
-                <a className="btnSecondary" href="#contact">Contact</a>
+                <a className="btnPrimary" href="#fuel">
+                  View Fuel Prices
+                </a>
+                <a className="btnSecondary" href="#services">
+                  Services
+                </a>
+                <a className="btnSecondary" href="#contact">
+                  Contact
+                </a>
               </div>
             </div>
           </div>
@@ -112,12 +150,16 @@ export default function HomeClient() {
 
       {/* FUEL */}
       <section id="fuel" className="sectionBlue">
-        <div className="container" style={{ padding: "44px 0" }}>
+        <div className="container" style={{ ...containerGutter, paddingTop: 44, paddingBottom: 44 }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
             <div>
               <h2 className="h2">Fuel Prices</h2>
-              <p className="p" style={{ color: "rgba(255,255,255,0.9)" }}>Prices subject to change.</p>
-              {loading && <div style={{ marginTop: 10, color: "rgba(255,255,255,0.9)" }}>Loading…</div>}
+              <p className="p" style={{ color: "rgba(255,255,255,0.9)" }}>
+                Prices subject to change.
+              </p>
+              {loading && (
+                <div style={{ marginTop: 10, color: "rgba(255,255,255,0.9)" }}>Loading…</div>
+              )}
             </div>
 
             {otherFuel.length > 0 && (
@@ -127,7 +169,9 @@ export default function HomeClient() {
                 </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
                   {otherFuel.map((x) => (
-                    <span key={x.id} style={alsoPill}>{titleCaseFuel(x.type)}</span>
+                    <span key={x.id} style={alsoPill}>
+                      {titleCaseFuel(x.type)}
+                    </span>
                   ))}
                 </div>
               </div>
@@ -162,14 +206,21 @@ export default function HomeClient() {
 
       {/* SERVICES */}
       <section id="services">
-        <div className="container" style={{ padding: "44px 0" }}>
+        <div className="container" style={{ ...containerGutter, paddingTop: 44, paddingBottom: 44 }}>
           <h2 className="h2">Services & Amenities</h2>
           <p className="p">Basic driver essentials and quick stops.</p>
 
           {enabledServices.length === 0 && !loading ? (
             <div style={{ marginTop: 14, color: "#666" }}>No services available.</div>
           ) : (
-            <div style={{ marginTop: 18, display: "grid", gap: 14, gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
+            <div
+              style={{
+                marginTop: 18,
+                display: "grid",
+                gap: 14,
+                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+              }}
+            >
               {enabledServices.map((s) => (
                 <div key={s.id} className="card" style={{ padding: 16 }}>
                   <div style={{ fontWeight: 900 }}>{s.name}</div>
@@ -180,21 +231,24 @@ export default function HomeClient() {
               ))}
             </div>
           )}
-
-        
         </div>
       </section>
 
       {/* CONTACT */}
       <section id="contact" className="sectionDark">
-        <div className="container" style={{ padding: "44px 0" }}>
+        <div className="container" style={{ ...containerGutter, paddingTop: 44, paddingBottom: 44 }}>
           <h2 className="h2">Visit Us</h2>
-          <p className="p" style={{ color: "rgba(255,255,255,0.9)" }}>Call ahead or get directions.</p>
+          <p className="p" style={{ color: "rgba(255,255,255,0.9)" }}>
+            Call ahead or get directions.
+          </p>
 
           <div style={{ marginTop: 18, display: "grid", gap: 14, gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
             <div className="card" style={infoCard}>
               <div style={infoLabel}>Address</div>
-              <div style={infoValue}>760 S Harding Hwy<br />Buena, NJ</div>
+              <div style={infoValue}>
+                760 S Harding Hwy<br />
+                Buena, NJ
+              </div>
             </div>
             <div className="card" style={infoCard}>
               <div style={infoLabel}>Phone</div>
@@ -230,7 +284,7 @@ export default function HomeClient() {
       </section>
 
       <footer style={{ borderTop: "4px solid var(--brand-blue)", background: "white" }}>
-        <div className="container" style={{ padding: "20px 0", color: "#555", fontSize: 13, lineHeight: 1.6 }}>
+        <div className="container" style={{ ...containerGutter, paddingTop: 20, paddingBottom: 20, color: "#555", fontSize: 13, lineHeight: 1.6 }}>
           © {new Date().getFullYear()} Buena Truck Stop • 760 S Harding Hwy, Buena, NJ • (856) 697-3887
         </div>
       </footer>
