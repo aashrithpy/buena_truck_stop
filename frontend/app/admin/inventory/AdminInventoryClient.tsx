@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { useSearchParams } from "next/navigation";
-
 
 type InventoryRow = {
   id: number;
@@ -14,6 +12,7 @@ type InventoryRow = {
   status: "in_stock" | "limited" | "out_of_stock";
   description: string | null;
   imageUrl: string | null;
+  featured?: boolean;
   updatedAt: string;
 };
 
@@ -26,9 +25,9 @@ function statusLabel(s: InventoryRow["status"]) {
 }
 
 export default function AdminInventoryClient() {
-
   const searchParams = useSearchParams();
   const category = searchParams.get("category") || "";
+  const featuredOnly = searchParams.get("featured") === "1";
 
   const router = useRouter();
 
@@ -46,11 +45,15 @@ export default function AdminInventoryClient() {
   const [newPrice, setNewPrice] = useState("");
   const [newStatus, setNewStatus] = useState<InventoryRow["status"]>("in_stock");
   const [newDesc, setNewDesc] = useState("");
+  const [newImageUrl, setNewImageUrl] = useState("");
 
   const inventoryUrl = useMemo(() => {
-    if (!category) return `${API_URL}/inventory`;
-    return `${API_URL}/inventory?category=${encodeURIComponent(category)}`;
-  }, [category]);
+    const qs = new URLSearchParams();
+    if (category) qs.set("category", category);
+    if (featuredOnly) qs.set("featured", "1");
+    const q = qs.toString();
+    return q ? `${API_URL}/inventory?${q}` : `${API_URL}/inventory`;
+  }, [category, featuredOnly]);
 
   useEffect(() => {
     const t = localStorage.getItem("admin_access_token") || "";
@@ -64,14 +67,20 @@ export default function AdminInventoryClient() {
     try {
       const [cRes, iRes] = await Promise.all([
         fetch(`${API_URL}/inventory/categories`, { cache: "no-store" }),
-        fetch(inventoryUrl, { cache: "no-store" }),
+        // backend doesn't filter featured=1 yet; remove it from request if present
+        fetch(inventoryUrl.replace(/([?&])featured=1(&|$)/, "$1").replace(/\?&/, "?").replace(/\?$/, ""), {
+          cache: "no-store",
+        }),
       ]);
+
       if (!cRes.ok) throw new Error("Failed to load categories");
       if (!iRes.ok) throw new Error("Failed to load inventory");
 
-      const [cats, inv] = await Promise.all([cRes.json(), iRes.json()]);
+      const [cats, invRaw] = await Promise.all([cRes.json(), iRes.json()]);
+      const inv: InventoryRow[] = Array.isArray(invRaw) ? invRaw : [];
+
       setCategories(cats);
-      setItems(inv);
+      setItems(featuredOnly ? inv.filter((x) => !!x.featured) : inv);
     } catch (e: any) {
       setErr(e?.message || "Failed to load");
     } finally {
@@ -106,7 +115,8 @@ export default function AdminInventoryClient() {
           price: row.price === "" ? undefined : row.price,
           status: row.status,
           description: row.description ?? undefined,
-          imageUrl: row.imageUrl ?? undefined,
+          imageUrl: row.imageUrl ?? undefined, // ✅ saves image url
+          featured: !!row.featured, // ✅ saves featured
         }),
       });
 
@@ -142,6 +152,8 @@ export default function AdminInventoryClient() {
           price: newPrice ? newPrice : undefined,
           status: newStatus,
           description: newDesc ? newDesc : undefined,
+          imageUrl: newImageUrl ? newImageUrl : undefined, // ✅ new item image
+          featured: false,
         }),
       });
 
@@ -156,6 +168,7 @@ export default function AdminInventoryClient() {
       setNewPrice("");
       setNewStatus("in_stock");
       setNewDesc("");
+      setNewImageUrl("");
 
       await load();
     } catch (e: any) {
@@ -166,6 +179,14 @@ export default function AdminInventoryClient() {
   function logout() {
     localStorage.removeItem("admin_access_token");
     router.push("/admin/login");
+  }
+
+  function hrefFor(categoryValue: string, featuredValue: boolean) {
+    const qs = new URLSearchParams();
+    if (categoryValue) qs.set("category", categoryValue);
+    if (featuredValue) qs.set("featured", "1");
+    const q = qs.toString();
+    return q ? `/admin/inventory?${q}` : "/admin/inventory";
   }
 
   return (
@@ -223,25 +244,44 @@ export default function AdminInventoryClient() {
             </select>
 
             <input placeholder="Description (optional)" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} style={inputStyle} />
+            <input placeholder="Image URL (optional)" value={newImageUrl} onChange={(e) => setNewImageUrl(e.target.value)} style={inputStyle} />
 
             <button type="submit" style={primaryBtnStyle}>
               Create
             </button>
           </form>
+
+          {newImageUrl ? (
+            <div style={{ marginTop: 12, fontSize: 13, color: "#444" }}>
+              Preview:
+              <div style={{ marginTop: 8, border: "1px solid #eee", borderRadius: 14, overflow: "hidden", maxWidth: 320 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={newImageUrl} alt="Preview" style={{ width: "100%", height: 180, objectFit: "cover", display: "block" }} />
+              </div>
+            </div>
+          ) : null}
         </section>
 
         {/* Filters */}
-        <div style={{ marginTop: 16, display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <a href="/admin/inventory" style={chipStyle(!category)}>All</a>
+        <div style={{ marginTop: 16, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          <a href={hrefFor("", featuredOnly)} style={chipStyle(!category)}>
+            All
+          </a>
+
           {categories.map((c) => (
-            <a
-              key={c}
-              href={`/admin/inventory?category=${encodeURIComponent(c)}`}
-              style={chipStyle(category === c)}
-            >
+            <a key={c} href={hrefFor(c, featuredOnly)} style={chipStyle(category === c)}>
               {c}
             </a>
           ))}
+
+          <span style={{ width: 10 }} />
+
+          <a href={hrefFor(category, false)} style={chipStyle(!featuredOnly)}>
+            All Items
+          </a>
+          <a href={hrefFor(category, true)} style={chipStyle(featuredOnly)}>
+            Featured
+          </a>
         </div>
 
         {/* List */}
@@ -252,15 +292,27 @@ export default function AdminInventoryClient() {
             <div style={{ padding: 10, display: "grid", gap: 10 }}>
               {items.map((row) => (
                 <div key={row.id} style={{ border: "1px solid #eee", borderRadius: 14, padding: 12 }}>
-                  <div style={{ display: "grid", gap: 10, gridTemplateColumns: "1fr 160px 180px" }}>
+                  <div style={{ display: "grid", gap: 10, gridTemplateColumns: "1fr 240px 200px" }}>
+                    {/* Left */}
                     <div>
                       <div style={{ fontWeight: 900 }}>
                         #{row.id} — {row.name}
                       </div>
                       <div style={{ marginTop: 6, color: "#555", fontSize: 13 }}>{row.category}</div>
                       {row.description ? <div style={{ marginTop: 8, color: "#666", fontSize: 13 }}>{row.description}</div> : null}
+
+                      {row.imageUrl ? (
+                        <div style={{ marginTop: 10, maxWidth: 260 }}>
+                          <div style={{ fontSize: 12, fontWeight: 900, color: "#111" }}>Image Preview</div>
+                          <div style={{ marginTop: 6, border: "1px solid #eee", borderRadius: 14, overflow: "hidden" }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={row.imageUrl} alt={row.name} style={{ width: "100%", height: 150, objectFit: "cover", display: "block" }} />
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
 
+                    {/* Middle */}
                     <div style={{ display: "grid", gap: 8 }}>
                       <label style={smallLabel}>Price</label>
                       <input
@@ -269,18 +321,47 @@ export default function AdminInventoryClient() {
                         placeholder="e.g. 3.47"
                         style={inputStyle}
                       />
+
                       <label style={smallLabel}>Status</label>
-                      <select
-                        value={row.status}
-                        onChange={(e) => updateLocal(row.id, { status: e.target.value as any })}
-                        style={inputStyle}
-                      >
+                      <select value={row.status} onChange={(e) => updateLocal(row.id, { status: e.target.value as any })} style={inputStyle}>
                         <option value="in_stock">{statusLabel("in_stock")}</option>
                         <option value="limited">{statusLabel("limited")}</option>
                         <option value="out_of_stock">{statusLabel("out_of_stock")}</option>
                       </select>
+
+                      <label style={smallLabel}>Image URL</label>
+                      <input
+                        value={row.imageUrl ?? ""}
+                        onChange={(e) => updateLocal(row.id, { imageUrl: e.target.value })}
+                        placeholder="https://..."
+                        style={inputStyle}
+                      />
+
+                      {/* Featured toggle */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
+                        <span style={{ ...smallLabel, margin: 0 }}>Featured</span>
+                        <button
+                          type="button"
+                          onClick={() => updateLocal(row.id, { featured: !row.featured })}
+                          aria-pressed={!!row.featured}
+                          style={{
+                            border: "1px solid",
+                            borderColor: row.featured ? "#111" : "#ddd",
+                            background: row.featured ? "#111" : "white",
+                            color: row.featured ? "white" : "#111",
+                            borderRadius: 999,
+                            padding: "8px 12px",
+                            fontWeight: 900,
+                            cursor: "pointer",
+                            width: "fit-content",
+                          }}
+                        >
+                          {row.featured ? "Yes" : "No"}
+                        </button>
+                      </div>
                     </div>
 
+                    {/* Right */}
                     <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 10 }}>
                       <button
                         onClick={() => saveRow(row)}

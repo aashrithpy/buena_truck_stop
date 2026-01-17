@@ -23,6 +23,31 @@ function statusText(s: InventoryRow["status"]) {
   return "Out of stock";
 }
 
+/**
+ * Mobile-safe gutters so text/cards never touch the screen edge.
+ * - Uses CSS env() for iPhone safe-area (notch/rounded corners)
+ */
+const containerGutter: React.CSSProperties = {
+  paddingLeft: "calc(16px + env(safe-area-inset-left))",
+  paddingRight: "calc(16px + env(safe-area-inset-right))",
+};
+
+const imgWrapStyle: React.CSSProperties = {
+  width: "100%",
+  aspectRatio: "4 / 3",
+  borderRadius: 14,
+  overflow: "hidden",
+  border: "1px solid var(--border)",
+  background: "#f4f4f4",
+};
+
+const imgStyle: React.CSSProperties = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+  display: "block",
+};
+
 export default function InventoryClient() {
   const searchParams = useSearchParams();
   const category = searchParams.get("category") || "";
@@ -51,8 +76,8 @@ export default function InventoryClient() {
       if (!iRes.ok) throw new Error("Failed to load inventory");
 
       const [cats, inv] = await Promise.all([cRes.json(), iRes.json()]);
-      setCategories(cats);
-      setItems(inv);
+      setCategories(Array.isArray(cats) ? cats : []);
+      setItems(Array.isArray(inv) ? inv : []);
     } catch (e: any) {
       setErr(e?.message || "Failed to load");
     } finally {
@@ -69,7 +94,7 @@ export default function InventoryClient() {
     <>
       <Navbar />
 
-      <main className="container" style={{ padding: "28px 0 48px" }}>
+      <main className="container" style={{ ...containerGutter, padding: "28px 0 48px" }}>
         <h1 className="h2" style={{ fontSize: 28 }}>
           Inventory
         </h1>
@@ -77,7 +102,9 @@ export default function InventoryClient() {
 
         {/* Category chips */}
         <div style={{ marginTop: 14, display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <a href="/inventory" style={chipStyle(!category)}>All</a>
+          <a href="/inventory" style={chipStyle(!category)}>
+            All
+          </a>
           {categories.map((c) => (
             <a
               key={c}
@@ -98,17 +125,52 @@ export default function InventoryClient() {
           ) : items.length === 0 ? (
             <div style={{ color: "#666" }}>No items found.</div>
           ) : (
-            <div style={{ marginTop: 12, display: "grid", gap: 14, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+            <div
+              style={{
+                marginTop: 12,
+                display: "grid",
+                gap: 14,
+                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              }}
+            >
               {items.map((item) => (
-                <div key={item.id} className="card" style={{ overflow: "hidden" }}>
-                  <div style={{ padding: 14 }}>
+                <div key={item.id} className="card" style={{ overflow: "hidden", padding: 14 }}>
+                  {/* Image */}
+                  <div style={imgWrapStyle}>
+                    {item.imageUrl ? (
+                      <img src={item.imageUrl} alt={item.name} style={imgStyle} loading="lazy" />
+                    ) : (
+                      <div
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          display: "grid",
+                          placeItems: "center",
+                          color: "#777",
+                          fontSize: 13,
+                          fontWeight: 800,
+                        }}
+                      >
+                        No image
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Text */}
+                  <div style={{ marginTop: 12 }}>
                     <div style={{ fontWeight: 900 }}>{item.name}</div>
                     <div style={{ marginTop: 6, color: "#666", fontSize: 13 }}>{item.category}</div>
 
-                    <div style={{ marginTop: 12, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-                      <div style={{ fontWeight: 900 }}>
-                        {item.price ? `$${item.price}` : ""}
-                      </div>
+                    <div
+                      style={{
+                        marginTop: 12,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: 10,
+                      }}
+                    >
+                      <div style={{ fontWeight: 900 }}>{item.price ? `$${item.price}` : ""}</div>
 
                       <span
                         style={{

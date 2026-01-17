@@ -5,7 +5,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { CreateInventoryDto } from './dto/create-inventory.dto';
 import { UpdateInventoryDto } from './dto/update-inventory.dto';
 
-@Controller('inventory')
+@Controller('inventory') 
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 
@@ -21,9 +21,10 @@ export class InventoryController {
     return this.inventoryService.categories();
   }
 
-  @Get('featured')
-  async featured() {
-    return this.inventoryService.featured();
+  @Get("featured")
+  async featured(@Query("limit") limit?: string) {
+    const n = limit ? Math.min(Number(limit) || 6, 24) : 6;
+    return this.inventoryService.getFeatured(n);
   }
 
   // Admin: POST /inventory

@@ -8,11 +8,16 @@ async function bootstrap() {
   const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:3000';
 
   app.enableCors({
-    origin: corsOrigin,
-    methods: ['GET', 'HEAD', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: false,
-  });
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true);
+    if (origin.startsWith("http://localhost:")) return cb(null, true);
+    return cb(new Error(`CORS blocked: ${origin}`), false);
+  },
+  methods: ["GET", "HEAD", "POST", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: false,
+});
+
 
   await app.listen(process.env.PORT || 4000);
 

@@ -12,6 +12,15 @@ type FuelRow = {
   updatedAt: string;
 };
 
+type InventoryItem = {
+  id: number;
+  name: string;
+  category?: string | null;
+  price?: string | null;
+  imageUrl?: string | null;
+  featured?: boolean;
+};
+
 type ServiceRow = {
   id: number;
   name: string;
@@ -39,52 +48,92 @@ function titleCaseFuel(type: FuelRow["type"]) {
 }
 
 /**
+ * Only allow absolute URLs for images (prevents accidental hits to API routes
+ * and avoids broken/invalid src values).
+ */
+function safeImageUrl(imageUrl: string | null | undefined) {
+  if (!imageUrl) return null;
+  const u = imageUrl.trim();
+  if (u.startsWith("http://") || u.startsWith("https://")) return u;
+  return null; // reject relative paths and anything else
+}
+
+/**
  * Mobile-safe gutters so text/cards never touch the screen edge.
  * - Uses CSS env() for iPhone safe-area (notch/rounded corners)
- * - Inline styles apply everywhere without editing globals.css
  */
 const containerGutter: React.CSSProperties = {
   paddingLeft: "calc(16px + env(safe-area-inset-left))",
   paddingRight: "calc(16px + env(safe-area-inset-right))",
 };
 
+const featuredImgWrap: React.CSSProperties = {
+  position: "relative",
+  width: "100%",
+  aspectRatio: "4 / 3",
+  borderRadius: 14,
+  overflow: "hidden",
+  border: "1px solid var(--border)",
+  background: "#f6f6f6",
+};
+
+const featuredImg: React.CSSProperties = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+  display: "block",
+};
+
 export default function HomeClient() {
   const [fuel, setFuel] = useState<FuelRow[]>([]);
   const [services, setServices] = useState<ServiceRow[]>([]);
+  const [featured, setFeatured] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+
     async function load() {
       try {
-        const [fRes, sRes] = await Promise.all([
+        const [fRes, sRes, featRes] = await Promise.all([
           fetch(`${API_URL}/fuel`, { cache: "no-store" }),
           fetch(`${API_URL}/services`, { cache: "no-store" }),
+          fetch(`${API_URL}/inventory/featured?limit=6`, { cache: "no-store" }),
         ]);
-        const [f, s] = await Promise.all([
+
+        const [f, s, feat] = await Promise.all([
           fRes.ok ? fRes.json() : [],
           sRes.ok ? sRes.json() : [],
+          featRes.ok ? featRes.json() : [],
         ]);
-        setFuel(f);
-        setServices(s);
+
+        if (cancelled) return;
+
+        setFuel(Array.isArray(f) ? f : []);
+        setServices(Array.isArray(s) ? s : []);
+        setFeatured(Array.isArray(feat) ? feat : []);
+      } catch {
+        // ignore; UI will show empty states
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
+
     load();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const pricedFuel = useMemo(
-    () => fuel.filter((f) => f.price !== null && f.available),
+    () => fuel.filter((f) => f.price !== null && (f.available ?? true)),
     [fuel]
   );
   const otherFuel = useMemo(
-    () => fuel.filter((f) => f.price === null && f.available),
+    () => fuel.filter((f) => f.price === null && (f.available ?? true)),
     [fuel]
   );
-  const enabledServices = useMemo(
-    () => services.filter((s) => s.enabled),
-    [services]
-  );
+  const enabledServices = useMemo(() => services.filter((s) => s.enabled), [services]);
 
   return (
     <>
@@ -93,13 +142,7 @@ export default function HomeClient() {
       {/* HERO */}
       <section style={{ position: "relative" }}>
         <div style={{ position: "relative", height: "70vh", minHeight: 480 }}>
-          <Image
-            src="/photos/main.png"
-            alt="Buena Truck Stop"
-            fill
-            priority
-            style={{ objectFit: "cover" }}
-          />
+          <Image src="/photos/main.png" alt="Buena Truck Stop" fill priority style={{ objectFit: "cover" }} />
 
           <div
             style={{
@@ -110,14 +153,7 @@ export default function HomeClient() {
             }}
           />
 
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              display: "flex",
-              alignItems: "flex-end",
-            }}
-          >
+          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "flex-end" }}>
             <div className="container" style={{ ...containerGutter, paddingBottom: 36 }}>
               <h1 className="h1" style={{ color: "white" }}>
                 Buena Truck Stop
@@ -135,6 +171,9 @@ export default function HomeClient() {
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 18 }}>
                 <a className="btnPrimary" href="#fuel">
                   View Fuel Prices
+                </a>
+                <a className="btnSecondary" href="#featured">
+                  Featured
                 </a>
                 <a className="btnSecondary" href="#services">
                   Services
@@ -157,9 +196,7 @@ export default function HomeClient() {
               <p className="p" style={{ color: "rgba(255,255,255,0.9)" }}>
                 Prices subject to change.
               </p>
-              {loading && (
-                <div style={{ marginTop: 10, color: "rgba(255,255,255,0.9)" }}>Loading…</div>
-              )}
+              {loading && <div style={{ marginTop: 10, color: "rgba(255,255,255,0.9)" }}>Loading…</div>}
             </div>
 
             {otherFuel.length > 0 && (
@@ -204,6 +241,72 @@ export default function HomeClient() {
         </div>
       </section>
 
+      {/* FEATURED PRODUCTS */}
+      <section id="featured">
+        <div className="container" style={{ ...containerGutter, paddingTop: 44, paddingBottom: 44 }}>
+          <h2 className="h2">Featured Products</h2>
+          <p className="p">Popular items available in our store.</p>
+
+          {featured.length === 0 && !loading ? (
+            <div style={{ marginTop: 14, color: "#666" }}>No featured products yet.</div>
+          ) : (
+            <div
+              style={{
+                marginTop: 18,
+                display: "grid",
+                gap: 14,
+                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              }}
+            >
+              {featured.map((item) => {
+                const img = safeImageUrl(item.imageUrl);
+
+                return (
+                  <div key={item.id} className="card" style={{ padding: 14 }}>
+                    <div style={featuredImgWrap}>
+                      {img ? (
+                        <img src={img} alt={item.name} style={featuredImg} loading="lazy" />
+                      ) : (
+                        <div
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            display: "grid",
+                            placeItems: "center",
+                            color: "#777",
+                            fontSize: 13,
+                            fontWeight: 800,
+                          }}
+                        >
+                          No image
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{ marginTop: 10, fontWeight: 900 }}>{item.name}</div>
+
+                    <div style={{ marginTop: 6, display: "flex", justifyContent: "space-between", gap: 10 }}>
+                      <div style={{ color: "#666", fontSize: 13 }}>{item.category || "Store item"}</div>
+                      {item.price ? (
+                        <div style={{ fontWeight: 900 }}>${item.price}</div>
+                      ) : (
+                        <div style={{ color: "#666", fontSize: 13 }}>Ask in store</div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <div style={{ marginTop: 14 }}>
+            <a className="btnSecondary" href="/inventory">
+              View Full Inventory
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* SERVICES */}
       <section id="services">
         <div className="container" style={{ ...containerGutter, paddingTop: 44, paddingBottom: 44 }}>
@@ -213,14 +316,7 @@ export default function HomeClient() {
           {enabledServices.length === 0 && !loading ? (
             <div style={{ marginTop: 14, color: "#666" }}>No services available.</div>
           ) : (
-            <div
-              style={{
-                marginTop: 18,
-                display: "grid",
-                gap: 14,
-                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-              }}
-            >
+            <div style={{ marginTop: 18, display: "grid", gap: 14, gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
               {enabledServices.map((s) => (
                 <div key={s.id} className="card" style={{ padding: 16 }}>
                   <div style={{ fontWeight: 900 }}>{s.name}</div>

@@ -42,58 +42,62 @@ export class InventoryService {
     await this.repo.save(rows.map((r) => this.repo.create(r)));
   }
 
-    async create(dto: {
-    name: string;
-    category: string;
+async create(dto: {
+  name: string;
+  category: string;
+  price?: string;
+  status?: "in_stock" | "limited" | "out_of_stock";
+  description?: string;
+  imageUrl?: string;
+  featured?: boolean;
+}) {
+  const created = this.repo.create({
+    name: dto.name,
+    category: dto.category,
+    price: dto.price ?? null,
+    status: dto.status ?? "in_stock",
+    description: dto.description ?? null,
+    imageUrl: dto.imageUrl ?? null,
+    featured: dto.featured ?? false,
+  });
+
+  return this.repo.save(created);
+}
+
+async updateById(
+  id: number,
+  patch: {
+    name?: string;
+    category?: string;
     price?: string;
-    status?: 'in_stock' | 'limited' | 'out_of_stock';
+    status?: "in_stock" | "limited" | "out_of_stock";
     description?: string;
     imageUrl?: string;
-  }) {
-    const created = this.repo.create({
-      name: dto.name,
-      category: dto.category,
-      price: dto.price ?? null,
-      status: dto.status ?? 'in_stock',
-      description: dto.description ?? null,
-      imageUrl: dto.imageUrl ?? null,
-      updatedAt: new Date(),
-    });
-    return this.repo.save(created);
+    featured?: boolean;
   }
+) {
+  const existing = await this.repo.findOne({ where: { id } });
+  if (!existing) return null;
 
-  async updateById(
-    id: number,
-    patch: {
-      name?: string;
-      category?: string;
-      price?: string;
-      status?: 'in_stock' | 'limited' | 'out_of_stock';
-      description?: string;
-      imageUrl?: string;
-    },
-  ) {
-    const existing = await this.repo.findOne({ where: { id } });
-    if (!existing) return null;
+  if (patch.name !== undefined) existing.name = patch.name;
+  if (patch.category !== undefined) existing.category = patch.category;
+  if (patch.price !== undefined) existing.price = patch.price;
+  if (patch.status !== undefined) existing.status = patch.status;
+  if (patch.description !== undefined) existing.description = patch.description;
+  if (patch.imageUrl !== undefined) existing.imageUrl = patch.imageUrl;
+  if (patch.featured !== undefined) existing.featured = patch.featured;
 
-    if (patch.name !== undefined) existing.name = patch.name;
-    if (patch.category !== undefined) existing.category = patch.category;
-    if (patch.price !== undefined) existing.price = patch.price;
-    if (patch.status !== undefined) existing.status = patch.status;
-    if (patch.description !== undefined) existing.description = patch.description;
-    if (patch.imageUrl !== undefined) existing.imageUrl = patch.imageUrl;
+  return this.repo.save(existing);
+}
 
-    existing.updatedAt = new Date();
-    return this.repo.save(existing);
-  }
-
-  async featured() {
-  // show newest items with images first
+async getFeatured(limit = 6) {
   return this.repo.find({
-    order: { updatedAt: 'DESC' as any },
-    take: 6,
-    });
-  }
+    where: { featured: true },
+    order: { updatedAt: "DESC" },
+    take: limit,
+  });
+}
+
 
 
 }

@@ -1,13 +1,13 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppController } from './app.controller';
-import { FuelModule } from './fuel/fuel.module';
-import { ServicesModule } from './services/services.module';
-import { InventoryModule } from './inventory/inventory.module';
-import { AuthModule } from './auth/auth.module';
-import { UsersModule } from './users/users.module';
+import { Module } from "@nestjs/common";
+import { ConfigModule, ConfigService } from "@nestjs/config";
+import { TypeOrmModule } from "@nestjs/typeorm";
 
+import { AppController } from "./app.controller";
+import { FuelModule } from "./fuel/fuel.module";
+import { ServicesModule } from "./services/services.module";
+import { InventoryModule } from "./inventory/inventory.module";
+import { AuthModule } from "./auth/auth.module";
+import { UsersModule } from "./users/users.module";
 
 @Module({
   imports: [
@@ -15,22 +15,26 @@ import { UsersModule } from './users/users.module';
 
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (cfg: ConfigService) => ({
-        type: 'postgres',
-        host: cfg.get<string>('DATABASE_HOST'),
-        port: Number(cfg.get<string>('DATABASE_PORT')),
-        username: cfg.get<string>('DATABASE_USER'),
-        password: cfg.get<string>('DATABASE_PASSWORD'),
-        database: cfg.get<string>('DATABASE_NAME'),
-        autoLoadEntities: true,
-        synchronize: true,
+      useFactory: (cfg: ConfigService) => {
+        const isProd = cfg.get<string>("NODE_ENV") === "production";
 
-        // SSL for RDS
-        ssl: true,
-        extra: {
-          ssl: { rejectUnauthorized: false },
-        },
-      }),
+        return {
+          type: "postgres",
+          host: cfg.get<string>("DATABASE_HOST"),
+          port: Number(cfg.get<string>("DATABASE_PORT")),
+          username: cfg.get<string>("DATABASE_USER"),
+          password: cfg.get<string>("DATABASE_PASSWORD"),
+          database: cfg.get<string>("DATABASE_NAME"),
+          autoLoadEntities: true,
+          synchronize: true,
+
+          // ✅ Local: no SSL. Prod (RDS): SSL.
+          ssl: isProd ? { rejectUnauthorized: false } : false,
+
+          // Some drivers read this instead; safe to include
+          extra: isProd ? { ssl: { rejectUnauthorized: false } } : {},
+        };
+      },
     }),
 
     UsersModule,
@@ -39,5 +43,6 @@ import { UsersModule } from './users/users.module';
     InventoryModule,
     FuelModule,
   ],
+  controllers: [AppController],
 })
 export class AppModule {}

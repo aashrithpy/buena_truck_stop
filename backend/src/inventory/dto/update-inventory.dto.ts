@@ -1,4 +1,4 @@
-import { IsIn, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, Matches, MaxLength, IsUrl } from 'class-validator';
 
 export class UpdateInventoryDto {
   @IsOptional()
@@ -25,8 +25,9 @@ export class UpdateInventoryDto {
   @MaxLength(400)
   description?: string;
 
+  // ✅ URL-only
   @IsOptional()
-  @IsString()
+  @IsUrl({ require_protocol: true }, { message: 'imageUrl must be a full URL starting with http(s)://' })
   @MaxLength(400)
   imageUrl?: string;
 }
