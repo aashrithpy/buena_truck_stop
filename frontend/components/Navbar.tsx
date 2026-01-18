@@ -63,9 +63,10 @@ export default function Navbar() {
             <a href="/#contact" style={navLink}>Contact</a>
           </nav>
 
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
             <Link className="btnPrimary" href="/inventory">📦 Inventory</Link>
-            <Link className="btnSecondary" href="/admin/login">👤 Sign In</Link>
+            <Link className="btnSecondary" href="/customer/login">Customer Login</Link>
+            <Link className="btnSecondary" href="/admin/login">Admin Sign In</Link>
 
             {/* Mobile hamburger */}
             <button
@@ -148,8 +149,11 @@ export default function Navbar() {
             <Link href="/inventory" onClick={() => setOpen(false)} className="btnPrimary">
               📦 Inventory
             </Link>
+            <Link href="/customer/login" onClick={() => setOpen(false)} className="btnSecondary">
+              Customer Login
+            </Link>
             <Link href="/admin/login" onClick={() => setOpen(false)} className="btnSecondary">
-              👤 Sign In
+              Admin Sign In
             </Link>
 
             <div style={{ marginTop: "auto", color: "#666", fontSize: 13, lineHeight: 1.5 }}>

@@ -46,6 +46,8 @@ export default function AdminInventoryClient() {
   const [newStatus, setNewStatus] = useState<InventoryRow["status"]>("in_stock");
   const [newDesc, setNewDesc] = useState("");
   const [newImageUrl, setNewImageUrl] = useState("");
+  const [uploadingNew, setUploadingNew] = useState(false);
+  const [uploadingId, setUploadingId] = useState<number | null>(null);
 
   const inventoryUrl = useMemo(() => {
     const qs = new URLSearchParams();
@@ -95,6 +97,54 @@ export default function AdminInventoryClient() {
 
   function updateLocal(id: number, patch: Partial<InventoryRow>) {
     setItems((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+  }
+
+  async function uploadImage(file: File) {
+    const form = new FormData();
+    form.append("file", file);
+
+    const res = await fetch(`${API_URL}/inventory/upload`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: form,
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text || "Image upload failed");
+    }
+
+    const data = await res.json();
+    if (!data?.url) throw new Error("Upload did not return a URL");
+    return data.url as string;
+  }
+
+  async function handleNewImage(file: File) {
+    setErr(null);
+    setUploadingNew(true);
+    try {
+      const url = await uploadImage(file);
+      setNewImageUrl(url);
+    } catch (e: any) {
+      setErr(e?.message || "Image upload failed");
+    } finally {
+      setUploadingNew(false);
+    }
+  }
+
+  async function handleRowImage(id: number, file: File) {
+    setErr(null);
+    setUploadingId(id);
+    try {
+      const url = await uploadImage(file);
+      updateLocal(id, { imageUrl: url });
+    } catch (e: any) {
+      setErr(e?.message || "Image upload failed");
+    } finally {
+      setUploadingId(null);
+    }
   }
 
   async function saveRow(row: InventoryRow) {
@@ -193,7 +243,7 @@ export default function AdminInventoryClient() {
     <>
       <Navbar />
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 16px 48px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+        <div className="adminHeader">
           <div>
             <h1 style={{ margin: 0, fontSize: 30, fontWeight: 900 }}>Admin • Inventory</h1>
             <p style={{ color: "#444", marginTop: 10, lineHeight: 1.6 }}>
@@ -201,20 +251,35 @@ export default function AdminInventoryClient() {
             </p>
           </div>
 
-          <button
-            onClick={logout}
-            style={{
-              border: "1px solid #ddd",
-              background: "white",
-              borderRadius: 12,
-              padding: "10px 12px",
-              fontWeight: 900,
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-            }}
-          >
-            Log out
-          </button>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <a
+              href="/admin/customers"
+              style={{
+                border: "1px solid #ddd",
+                background: "white",
+                borderRadius: 12,
+                padding: "10px 12px",
+                fontWeight: 900,
+                whiteSpace: "nowrap",
+              }}
+            >
+              Customer Accounts
+            </a>
+            <button
+              onClick={logout}
+              style={{
+                border: "1px solid #ddd",
+                background: "white",
+                borderRadius: 12,
+                padding: "10px 12px",
+                fontWeight: 900,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Log out
+            </button>
+          </div>
         </div>
 
         {err && <div style={{ marginTop: 14, color: "#b00", whiteSpace: "pre-wrap" }}>{err}</div>}
@@ -245,6 +310,18 @@ export default function AdminInventoryClient() {
 
             <input placeholder="Description (optional)" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} style={inputStyle} />
             <input placeholder="Image URL (optional)" value={newImageUrl} onChange={(e) => setNewImageUrl(e.target.value)} style={inputStyle} />
+            <div style={{ display: "grid", gap: 6 }}>
+              <label style={smallLabel}>Or upload image</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void handleNewImage(file);
+                }}
+              />
+              {uploadingNew && <span style={{ fontSize: 12, color: "#666" }}>Uploading…</span>}
+            </div>
 
             <button type="submit" style={primaryBtnStyle}>
               Create
@@ -292,7 +369,7 @@ export default function AdminInventoryClient() {
             <div style={{ padding: 10, display: "grid", gap: 10 }}>
               {items.map((row) => (
                 <div key={row.id} style={{ border: "1px solid #eee", borderRadius: 14, padding: 12 }}>
-                  <div style={{ display: "grid", gap: 10, gridTemplateColumns: "1fr 240px 200px" }}>
+                  <div className="inventoryRow">
                     {/* Left */}
                     <div>
                       <div style={{ fontWeight: 900 }}>
@@ -336,6 +413,18 @@ export default function AdminInventoryClient() {
                         placeholder="https://..."
                         style={inputStyle}
                       />
+                      <div style={{ display: "grid", gap: 6 }}>
+                        <label style={smallLabel}>Upload image</label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) void handleRowImage(row.id, file);
+                          }}
+                        />
+                        {uploadingId === row.id && <span style={{ fontSize: 12, color: "#666" }}>Uploading…</span>}
+                      </div>
 
                       {/* Featured toggle */}
                       <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
@@ -388,6 +477,27 @@ export default function AdminInventoryClient() {
             </div>
           )}
         </section>
+        <style jsx>{`
+          .adminHeader {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+          }
+
+          .inventoryRow {
+            display: grid;
+            gap: 10px;
+            grid-template-columns: 1fr 240px 200px;
+          }
+
+          @media (max-width: 900px) {
+            .inventoryRow {
+              grid-template-columns: 1fr;
+            }
+          }
+        `}</style>
       </main>
     </>
   );

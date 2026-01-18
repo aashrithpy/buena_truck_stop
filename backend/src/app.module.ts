@@ -8,6 +8,7 @@ import { ServicesModule } from "./services/services.module";
 import { InventoryModule } from "./inventory/inventory.module";
 import { AuthModule } from "./auth/auth.module";
 import { UsersModule } from "./users/users.module";
+import { CustomersModule } from "./customers/customers.module";
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { UsersModule } from "./users/users.module";
 
     UsersModule,
     AuthModule,
+    CustomersModule,
     ServicesModule,
     InventoryModule,
     FuelModule,
