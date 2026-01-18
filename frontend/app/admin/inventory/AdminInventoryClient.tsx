@@ -32,6 +32,7 @@ export default function AdminInventoryClient() {
   const router = useRouter();
 
   const [token, setToken] = useState("");
+  const [authReady, setAuthReady] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
   const [items, setItems] = useState<InventoryRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,8 +60,12 @@ export default function AdminInventoryClient() {
 
   useEffect(() => {
     const t = localStorage.getItem("admin_access_token") || "";
-    if (!t) router.push("/admin/login");
+    if (!t) {
+      router.push("/admin/login");
+      return;
+    }
     setToken(t);
+    setAuthReady(true);
   }, [router]);
 
   async function load() {
@@ -91,9 +96,10 @@ export default function AdminInventoryClient() {
   }
 
   useEffect(() => {
+    if (!authReady) return;
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inventoryUrl]);
+  }, [authReady, inventoryUrl]);
 
   function updateLocal(id: number, patch: Partial<InventoryRow>) {
     setItems((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)));
@@ -239,6 +245,17 @@ export default function AdminInventoryClient() {
     return q ? `/admin/inventory?${q}` : "/admin/inventory";
   }
 
+  if (!authReady) {
+    return (
+      <>
+        <Navbar />
+        <main style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 16px 48px" }}>
+          <div style={{ padding: 16, color: "#666" }}>Checking admin session…</div>
+        </main>
+      </>
+    );
+  }
+
   return (
     <>
       <Navbar />
@@ -253,6 +270,36 @@ export default function AdminInventoryClient() {
 
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <a
+              href="/admin/fuel"
+              style={{
+                border: "1px solid #ddd",
+                background: "white",
+                borderRadius: 12,
+                padding: "10px 12px",
+                fontWeight: 900,
+                whiteSpace: "nowrap",
+                color: "#111",
+                textDecoration: "none",
+              }}
+            >
+              Fuel Prices
+            </a>
+            <a
+              href="/admin/inventory"
+              style={{
+                border: "1px solid #111",
+                background: "white",
+                borderRadius: 12,
+                padding: "10px 12px",
+                fontWeight: 900,
+                whiteSpace: "nowrap",
+                color: "#111",
+                textDecoration: "none",
+              }}
+            >
+              Inventory
+            </a>
+            <a
               href="/admin/customers"
               style={{
                 border: "1px solid #ddd",
@@ -261,9 +308,11 @@ export default function AdminInventoryClient() {
                 padding: "10px 12px",
                 fontWeight: 900,
                 whiteSpace: "nowrap",
+                color: "#111",
+                textDecoration: "none",
               }}
             >
-              Customer Accounts
+              Customers
             </a>
             <button
               onClick={logout}

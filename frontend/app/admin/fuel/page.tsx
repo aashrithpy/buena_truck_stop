@@ -33,6 +33,7 @@ export default function AdminFuelPage() {
   const router = useRouter();
 
   const [token, setToken] = useState("");
+  const [authReady, setAuthReady] = useState(false);
   const [fuel, setFuel] = useState<FuelRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
@@ -41,8 +42,12 @@ export default function AdminFuelPage() {
 
   useEffect(() => {
     const t = localStorage.getItem("admin_access_token") || "";
-    if (!t) router.push("/admin/login");
+    if (!t) {
+      router.push("/admin/login");
+      return;
+    }
     setToken(t);
+    setAuthReady(true);
   }, [router]);
 
   async function loadFuel() {
@@ -60,8 +65,9 @@ export default function AdminFuelPage() {
   }
 
   useEffect(() => {
+    if (!authReady) return;
     loadFuel();
-  }, []);
+  }, [authReady]);
 
   function updateLocal(type: FuelRow["type"], patch: Partial<FuelRow>) {
     setFuel((prev) => prev.map((f) => (f.type === type ? { ...f, ...patch } : f)));
@@ -105,11 +111,22 @@ export default function AdminFuelPage() {
     router.push("/admin/login");
   }
 
+  if (!authReady) {
+    return (
+      <>
+        <Navbar />
+        <main style={{ maxWidth: 900, margin: "0 auto", padding: "28px 16px 48px" }}>
+          <div style={{ padding: 16, color: "#666" }}>Checking admin session…</div>
+        </main>
+      </>
+    );
+  }
+
   return (
     <>
       <Navbar />
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "28px 16px 48px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
           <div>
             <h1 style={{ margin: 0, fontSize: 30, fontWeight: 900 }}>Admin • Fuel Prices</h1>
             <p style={{ color: "#444", marginTop: 10, lineHeight: 1.6 }}>
@@ -117,20 +134,67 @@ export default function AdminFuelPage() {
             </p>
           </div>
 
-          <button
-            onClick={logout}
-            style={{
-              border: "1px solid #ddd",
-              background: "white",
-              borderRadius: 12,
-              padding: "10px 12px",
-              fontWeight: 900,
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-            }}
-          >
-            Log out
-          </button>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <a
+              href="/admin/fuel"
+              style={{
+                border: "1px solid #111",
+                background: "white",
+                borderRadius: 12,
+                padding: "10px 12px",
+                fontWeight: 900,
+                whiteSpace: "nowrap",
+                color: "#111",
+                textDecoration: "none",
+              }}
+            >
+              Fuel Prices
+            </a>
+            <a
+              href="/admin/inventory"
+              style={{
+                border: "1px solid #ddd",
+                background: "white",
+                borderRadius: 12,
+                padding: "10px 12px",
+                fontWeight: 900,
+                whiteSpace: "nowrap",
+                color: "#111",
+                textDecoration: "none",
+              }}
+            >
+              Inventory
+            </a>
+            <a
+              href="/admin/customers"
+              style={{
+                border: "1px solid #ddd",
+                background: "white",
+                borderRadius: 12,
+                padding: "10px 12px",
+                fontWeight: 900,
+                whiteSpace: "nowrap",
+                color: "#111",
+                textDecoration: "none",
+              }}
+            >
+              Customers
+            </a>
+            <button
+              onClick={logout}
+              style={{
+                border: "1px solid #ddd",
+                background: "white",
+                borderRadius: 12,
+                padding: "10px 12px",
+                fontWeight: 900,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Log out
+            </button>
+          </div>
         </div>
 
         {err && <div style={{ marginTop: 14, color: "#b00", whiteSpace: "pre-wrap" }}>{err}</div>}

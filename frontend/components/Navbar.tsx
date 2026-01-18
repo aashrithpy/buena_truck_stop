@@ -16,21 +16,6 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Top Banner */}
-      <div
-        style={{
-          background: "var(--brand-red)",
-          color: "white",
-          padding: "10px 16px",
-          textAlign: "center",
-          fontWeight: 800,
-          fontSize: 13,
-          letterSpacing: "0.03em",
-        }}
-      >
-        ⏰ WEEKDAYS 5AM–10PM • WEEKENDS 6AM–10PM
-      </div>
-
       {/* Sticky Header */}
       <header
         style={{
@@ -66,7 +51,6 @@ export default function Navbar() {
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
             <Link className="btnPrimary" href="/inventory">📦 Inventory</Link>
             <Link className="btnSecondary" href="/customer/login">Customer Login</Link>
-            <Link className="btnSecondary" href="/admin/login">Admin Sign In</Link>
 
             {/* Mobile hamburger */}
             <button
@@ -151,9 +135,6 @@ export default function Navbar() {
             </Link>
             <Link href="/customer/login" onClick={() => setOpen(false)} className="btnSecondary">
               Customer Login
-            </Link>
-            <Link href="/admin/login" onClick={() => setOpen(false)} className="btnSecondary">
-              Admin Sign In
             </Link>
 
             <div style={{ marginTop: "auto", color: "#666", fontSize: 13, lineHeight: 1.5 }}>
