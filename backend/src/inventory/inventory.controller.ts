@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query, Req, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
+import { diskStorage, memoryStorage } from 'multer';
+import type { Multer } from 'multer';
 import { extname } from 'path';
 import { mkdirSync } from 'fs';
 import { InventoryService } from './inventory.service';
@@ -64,7 +65,7 @@ export class InventoryController {
       limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
-  async upload(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
+  async upload(@UploadedFile() file: Multer.File, @Req() req: any) {
     if (!file) {
       return { message: 'No file uploaded' };
     }
@@ -72,7 +73,7 @@ export class InventoryController {
     const host = req.get('host');
     const protocol = req.protocol;
     const url = `${protocol}://${host}/uploads/inventory/${file.filename}`;
-    return { url };
+    return { url, filename: file.filename, size: file.size };
   }
 
   // Admin: PATCH /inventory/:id
