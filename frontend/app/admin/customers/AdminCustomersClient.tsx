@@ -21,6 +21,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 export default function AdminCustomersClient() {
   const router = useRouter();
   const [token, setToken] = useState("");
+  const [authReady, setAuthReady] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -40,6 +41,7 @@ export default function AdminCustomersClient() {
       return;
     }
     setToken(t);
+    setAuthReady(true);
   }, [router]);
 
   async function load() {
@@ -61,9 +63,9 @@ export default function AdminCustomersClient() {
   }
 
   useEffect(() => {
-    if (token) void load();
+    if (authReady && token) void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, [authReady, token]);
 
   async function createCustomer(e: React.FormEvent) {
     e.preventDefault();
@@ -113,6 +115,17 @@ export default function AdminCustomersClient() {
   function logout() {
     localStorage.removeItem("admin_access_token");
     router.push("/admin/login");
+  }
+
+  if (!authReady) {
+    return (
+      <>
+        <Navbar />
+        <main style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 16px 48px" }}>
+          <div style={{ padding: 16, color: "#666" }}>Checking admin session…</div>
+        </main>
+      </>
+    );
   }
 
   return (

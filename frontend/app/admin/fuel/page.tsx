@@ -33,6 +33,7 @@ export default function AdminFuelPage() {
   const router = useRouter();
 
   const [token, setToken] = useState("");
+  const [authReady, setAuthReady] = useState(false);
   const [fuel, setFuel] = useState<FuelRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
@@ -41,8 +42,12 @@ export default function AdminFuelPage() {
 
   useEffect(() => {
     const t = localStorage.getItem("admin_access_token") || "";
-    if (!t) router.push("/admin/login");
+    if (!t) {
+      router.push("/admin/login");
+      return;
+    }
     setToken(t);
+    setAuthReady(true);
   }, [router]);
 
   async function loadFuel() {
@@ -60,8 +65,9 @@ export default function AdminFuelPage() {
   }
 
   useEffect(() => {
+    if (!authReady) return;
     loadFuel();
-  }, []);
+  }, [authReady]);
 
   function updateLocal(type: FuelRow["type"], patch: Partial<FuelRow>) {
     setFuel((prev) => prev.map((f) => (f.type === type ? { ...f, ...patch } : f)));
@@ -103,6 +109,17 @@ export default function AdminFuelPage() {
   function logout() {
     localStorage.removeItem("admin_access_token");
     router.push("/admin/login");
+  }
+
+  if (!authReady) {
+    return (
+      <>
+        <Navbar />
+        <main style={{ maxWidth: 900, margin: "0 auto", padding: "28px 16px 48px" }}>
+          <div style={{ padding: 16, color: "#666" }}>Checking admin session…</div>
+        </main>
+      </>
+    );
   }
 
   return (

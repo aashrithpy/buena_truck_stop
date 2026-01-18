@@ -32,6 +32,7 @@ export default function AdminInventoryClient() {
   const router = useRouter();
 
   const [token, setToken] = useState("");
+  const [authReady, setAuthReady] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
   const [items, setItems] = useState<InventoryRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,8 +60,12 @@ export default function AdminInventoryClient() {
 
   useEffect(() => {
     const t = localStorage.getItem("admin_access_token") || "";
-    if (!t) router.push("/admin/login");
+    if (!t) {
+      router.push("/admin/login");
+      return;
+    }
     setToken(t);
+    setAuthReady(true);
   }, [router]);
 
   async function load() {
@@ -91,9 +96,10 @@ export default function AdminInventoryClient() {
   }
 
   useEffect(() => {
+    if (!authReady) return;
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inventoryUrl]);
+  }, [authReady, inventoryUrl]);
 
   function updateLocal(id: number, patch: Partial<InventoryRow>) {
     setItems((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)));
@@ -237,6 +243,17 @@ export default function AdminInventoryClient() {
     if (featuredValue) qs.set("featured", "1");
     const q = qs.toString();
     return q ? `/admin/inventory?${q}` : "/admin/inventory";
+  }
+
+  if (!authReady) {
+    return (
+      <>
+        <Navbar />
+        <main style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 16px 48px" }}>
+          <div style={{ padding: 16, color: "#666" }}>Checking admin session…</div>
+        </main>
+      </>
+    );
   }
 
   return (
