@@ -253,6 +253,36 @@ export default function AdminInventoryClient() {
 
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <a
+              href="/admin/fuel"
+              style={{
+                border: "1px solid #ddd",
+                background: "white",
+                borderRadius: 12,
+                padding: "10px 12px",
+                fontWeight: 900,
+                whiteSpace: "nowrap",
+                color: "#111",
+                textDecoration: "none",
+              }}
+            >
+              Fuel Prices
+            </a>
+            <a
+              href="/admin/inventory"
+              style={{
+                border: "1px solid #111",
+                background: "white",
+                borderRadius: 12,
+                padding: "10px 12px",
+                fontWeight: 900,
+                whiteSpace: "nowrap",
+                color: "#111",
+                textDecoration: "none",
+              }}
+            >
+              Inventory
+            </a>
+            <a
               href="/admin/customers"
               style={{
                 border: "1px solid #ddd",
@@ -261,9 +291,11 @@ export default function AdminInventoryClient() {
                 padding: "10px 12px",
                 fontWeight: 900,
                 whiteSpace: "nowrap",
+                color: "#111",
+                textDecoration: "none",
               }}
             >
-              Customer Accounts
+              Customers
             </a>
             <button
               onClick={logout}

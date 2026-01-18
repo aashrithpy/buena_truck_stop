@@ -126,20 +126,67 @@ export default function AdminCustomersClient() {
               Create customer accounts that can log in with the credentials you provide.
             </p>
           </div>
-          <button
-            onClick={logout}
-            style={{
-              border: "1px solid #ddd",
-              background: "white",
-              borderRadius: 12,
-              padding: "10px 12px",
-              fontWeight: 900,
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-            }}
-          >
-            Log out
-          </button>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <a
+              href="/admin/fuel"
+              style={{
+                border: "1px solid #ddd",
+                background: "white",
+                borderRadius: 12,
+                padding: "10px 12px",
+                fontWeight: 900,
+                whiteSpace: "nowrap",
+                color: "#111",
+                textDecoration: "none",
+              }}
+            >
+              Fuel Prices
+            </a>
+            <a
+              href="/admin/inventory"
+              style={{
+                border: "1px solid #ddd",
+                background: "white",
+                borderRadius: 12,
+                padding: "10px 12px",
+                fontWeight: 900,
+                whiteSpace: "nowrap",
+                color: "#111",
+                textDecoration: "none",
+              }}
+            >
+              Inventory
+            </a>
+            <a
+              href="/admin/customers"
+              style={{
+                border: "1px solid #111",
+                background: "white",
+                borderRadius: 12,
+                padding: "10px 12px",
+                fontWeight: 900,
+                whiteSpace: "nowrap",
+                color: "#111",
+                textDecoration: "none",
+              }}
+            >
+              Customers
+            </a>
+            <button
+              onClick={logout}
+              style={{
+                border: "1px solid #ddd",
+                background: "white",
+                borderRadius: 12,
+                padding: "10px 12px",
+                fontWeight: 900,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Log out
+            </button>
+          </div>
         </div>
 
         {err && <div style={{ marginTop: 14, color: "#b00", whiteSpace: "pre-wrap" }}>{err}</div>}
