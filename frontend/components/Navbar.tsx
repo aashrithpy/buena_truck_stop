@@ -48,9 +48,10 @@ export default function Navbar() {
             <a href="/#contact" style={navLink}>Contact</a>
           </nav>
 
-          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <div className="desktopNav" style={{ display: "none", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
             <Link className="btnPrimary" href="/inventory">📦 Inventory</Link>
             <Link className="btnSecondary" href="/customer/login">Customer Login</Link>
+          </div>
 
             {/* Mobile hamburger */}
             <button
@@ -68,7 +69,7 @@ export default function Navbar() {
             >
               ☰
             </button>
-          </div>
+          
         </div>
 
         <style jsx global>{`
