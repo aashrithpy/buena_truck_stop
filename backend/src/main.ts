@@ -11,18 +11,22 @@ async function bootstrap() {
   });
 
   // Allow the frontend to call the API from the browser
-  const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:3000';
+  const allowedOrigins = new Set([
+    'https://main.d3ekfvo4ndqmr8.amplifyapp.com',
+    'http://localhost:3000',
+    'http://localhost:4000',
+  ]);
 
   app.enableCors({
-  origin: (origin, cb) => {
-    if (!origin) return cb(null, true);
-    if (origin.startsWith("http://localhost:")) return cb(null, true);
-    return cb(new Error(`CORS blocked: ${origin}`), false);
-  },
-  methods: ["GET", "HEAD", "POST", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: false,
-});
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true); // allow non-browser tools
+      if (allowedOrigins.has(origin)) return cb(null, true);
+      return cb(null, false); // do NOT throw an error
+    },
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: false, // set true ONLY if you use cookies auth
+  });
 
 
   await app.listen(process.env.PORT || 4000);
