@@ -51,16 +51,29 @@ const imgStyle: React.CSSProperties = {
 export default function InventoryClient() {
   const searchParams = useSearchParams();
   const category = searchParams.get("category") || "";
+  const initialQuery = searchParams.get("q") || "";
 
   const [categories, setCategories] = useState<string[]>([]);
   const [items, setItems] = useState<InventoryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const [query, setQuery] = useState(initialQuery);
 
   const inventoryUrl = useMemo(() => {
     if (!category) return `${API_URL}/inventory`;
     return `${API_URL}/inventory?category=${encodeURIComponent(category)}`;
   }, [category]);
+
+  const filteredItems = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return items;
+    return items.filter((item) => {
+      const haystack = [item.name, item.category, item.description || ""]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(needle);
+    });
+  }, [items, query]);
 
   async function load() {
     setLoading(true);
@@ -100,6 +113,23 @@ export default function InventoryClient() {
         </h1>
         <p className="p">Browse what’s currently available in the store.</p>
 
+        <div style={{ marginTop: 14, maxWidth: 460 }}>
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search for our products"
+            aria-label="Search for products"
+            style={{
+              width: "100%",
+              padding: "10px 12px",
+              borderRadius: 10,
+              border: "1px solid #ddd",
+              fontSize: 14,
+            }}
+          />
+        </div>
+
         {/* Category chips */}
         <div style={{ marginTop: 14, display: "flex", gap: 8, flexWrap: "wrap" }}>
           <a href="/inventory" style={chipStyle(!category)}>
@@ -122,7 +152,7 @@ export default function InventoryClient() {
         <section style={{ marginTop: 14 }}>
           {loading ? (
             <div style={{ color: "#666" }}>Loading…</div>
-          ) : items.length === 0 ? (
+          ) : filteredItems.length === 0 ? (
             <div style={{ color: "#666" }}>No items found.</div>
           ) : (
             <div
@@ -133,7 +163,7 @@ export default function InventoryClient() {
                 gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
               }}
             >
-              {items.map((item) => (
+              {filteredItems.map((item) => (
                 <div key={item.id} className="card" style={{ overflow: "hidden", padding: 14 }}>
                   {/* Image */}
                   <div style={imgWrapStyle}>

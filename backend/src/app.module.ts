@@ -9,6 +9,7 @@ import { InventoryModule } from "./inventory/inventory.module";
 import { AuthModule } from "./auth/auth.module";
 import { UsersModule } from "./users/users.module";
 import { CustomersModule } from "./customers/customers.module";
+import { ParkingModule } from "./parking/parking.module";
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { CustomersModule } from "./customers/customers.module";
     ServicesModule,
     InventoryModule,
     FuelModule,
+    ParkingModule,
   ],
   controllers: [AppController],
 })

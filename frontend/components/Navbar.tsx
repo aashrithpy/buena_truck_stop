@@ -46,9 +46,11 @@ export default function Navbar() {
             <a href="/#fuel" style={navLink}>Fuel</a>
             <a href="/#services" style={navLink}>Services</a>
             <a href="/#contact" style={navLink}>Contact</a>
+            <Link href="/parking" style={navLink}>Parking</Link>
           </nav>
 
           <div className="desktopNav" style={{ display: "none", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <Link className="btnPrimary" href="/parking">🅿️ Book Parking</Link>
             <Link className="btnPrimary" href="/inventory">📦 Inventory</Link>
             <Link className="btnSecondary" href="/customer/login">Customer Login</Link>
           </div>
@@ -130,7 +132,11 @@ export default function Navbar() {
             <a href="/#fuel" onClick={() => setOpen(false)} style={drawerLink}>Fuel</a>
             <a href="/#services" onClick={() => setOpen(false)} style={drawerLink}>Services</a>
             <a href="/#contact" onClick={() => setOpen(false)} style={drawerLink}>Contact</a>
+            <Link href="/parking" onClick={() => setOpen(false)} style={drawerLink}>Parking</Link>
 
+            <Link href="/parking" onClick={() => setOpen(false)} className="btnPrimary">
+              🅿️ Book Parking
+            </Link>
             <Link href="/inventory" onClick={() => setOpen(false)} className="btnPrimary">
               📦 Inventory
             </Link>

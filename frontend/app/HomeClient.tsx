@@ -47,6 +47,23 @@ function titleCaseFuel(type: FuelRow["type"]) {
   }
 }
 
+function fuelEmoji(type: FuelRow["type"]) {
+  switch (type) {
+    case "diesel":
+      return "🛢️";
+    case "gas":
+      return "⛽";
+    case "premium":
+      return "⛽✨";
+    case "off_road_diesel":
+      return "🚜";
+    case "propane":
+      return "🔥";
+    default:
+      return "⛽";
+  }
+}
+
 /**
  * Only allow absolute URLs for images (prevents accidental hits to API routes
  * and avoids broken/invalid src values).
@@ -207,7 +224,7 @@ export default function HomeClient() {
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
                   {otherFuel.map((x) => (
                     <span key={x.id} style={alsoPill}>
-                      {titleCaseFuel(x.type)}
+                      {fuelEmoji(x.type)} {titleCaseFuel(x.type)}
                     </span>
                   ))}
                 </div>
@@ -231,7 +248,7 @@ export default function HomeClient() {
                   }}
                 >
                   <div style={{ fontFamily: "Oswald, sans-serif", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                    {titleCaseFuel(f.type)}
+                    {fuelEmoji(f.type)} {titleCaseFuel(f.type)}
                   </div>
                   <div style={{ marginTop: 10, fontSize: 30, fontWeight: 900 }}>${f.price}</div>
                 </div>
